@@ -94,7 +94,7 @@ component singleton=true {
 		var untrackedExtensions = _listPresentExtensions();
 		for( var ext in untrackedExtensions ) {
 			if ( ext == arguments.extensionName ) {
-				ArrayAppend( extensions, { name=ext, priority=0, active=true } )
+				ArrayAppend( extensions, { name=ext, priority=0, active=true } );
 				_writeExtensionsToFile( extensions );
 				return;
 			}
@@ -117,7 +117,7 @@ component singleton=true {
 		var untrackedExtensions = _listPresentExtensions();
 		for( var ext in untrackedExtensions ) {
 			if ( ext == arguments.extensionName ) {
-				ArrayAppend( extensions, { name=ext, priority=0, active=false } )
+				ArrayAppend( extensions, { name=ext, priority=0, active=false } );
 				_writeExtensionsToFile( extensions );
 				return;
 			}
@@ -271,7 +271,7 @@ component singleton=true {
 
 		if ( missingFields.len() ) {
 			var message = "The extension, [#arguments.extensionNameOrDirectory#], has an invalid manifest file. Missing required fields: ";
-			var delim   = ""
+			var delim   = "";
 			for( var field in missingFields ) {
 				message &= delim & "[#field#]";
 				delim = ", ";
