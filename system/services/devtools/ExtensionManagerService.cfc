@@ -204,7 +204,7 @@ component singleton=true {
 
 // PRIVATE HELPERS
 	private array function _readExtensionsFromFile() {
-		var extensionsFile = _getExtensionsListFilePath();
+		var extensionsFile = expandPath( _getExtensionsListFilePath() );
 		var extensions     = "";
 
 		lock name="extfileop-#extensionsFile#" type="exclusive" timeout="10" {
@@ -240,8 +240,8 @@ component singleton=true {
 	}
 
 	private void function _createExtensionsFileIfItDoesNotExist() {
-		var extensionsDir = _getExtensionsDirectory();
-		var extensionsFile = _getExtensionsListFilePath();
+		var extensionsDir = expandPath( _getExtensionsDirectory() );
+		var extensionsFile = expandPath( _getExtensionsListFilePath() );
 
 		lock name="extfileop-#extensionsFile#" type="exclusive" timeout="10" {
 

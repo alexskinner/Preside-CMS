@@ -488,7 +488,7 @@ component output=false {
 	}
 
 	private string function _getCookieEncryptionKey() output=false {
-		var cookieKeyFile = "#settings.appMapping#/config/.cookieEncryptionKey";
+		var cookieKeyFile = expandPath( "#settings.appMapping#/config/.cookieEncryptionKey" );
 		if ( FileExists( cookieKeyFile ) ) {
 			try {
 				return FileRead( cookieKeyFile );

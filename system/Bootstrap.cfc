@@ -448,10 +448,7 @@ component {
 	}
 
 	private string function _getApplicationRoot() {
-		var trace      = CallStackGet();
-		var appCfcPath = trace[ trace.len() ].template;
-		var dir        = GetDirectoryFromPath( appCfcPath );
-
+		var dir        = GetDirectoryFrompath ( expandPath( "/" ) );
 		return ReReplace( dir, "[\\/]$", "" );
 	}
 

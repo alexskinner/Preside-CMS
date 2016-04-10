@@ -103,7 +103,7 @@ component {
 	}
 
 	private any function _getApplicationVariable() {
-		return application.presideMaintenanceMode ?: {}; //NullValue() no equivalent in ACF ?
+		return application.presideMaintenanceMode ?: JavaCast( "null", 0 );
 	}
 	private void function _setApplicationVariable( required struct maintenanceModeSettings ) {
 		application.presideMaintenanceMode = arguments.maintenanceModeSettings;
