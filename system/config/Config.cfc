@@ -216,7 +216,7 @@ component output=false {
 			 }
 		};
 
-		settings.adminRoles = StructNew( "linked" );
+		settings.adminRoles = createObject("java", "java.util.LinkedHashMap").init();
 
 		settings.adminRoles.sysadmin           = [ "usermanager.*", "groupmanager.*", "systemConfiguration.*", "presideobject.security_user.*", "presideobject.security_group.*", "websiteBenefitsManager.*", "websiteUserManager.*", "sites.*", "presideobject.links.*", "notifications.*", "passwordPolicyManager.*", "urlRedirects.*"  ];
 		settings.adminRoles.contentadmin       = [ "sites.*", "presideobject.site.*", "presideobject.link.*", "sitetree.*", "presideobject.page.*", "datamanager.*", "assetmanager.*", "presideobject.asset.*", "presideobject.asset_folder.*", "formbuilder.*", "!formbuilder.lockForm", "!formbuilder.activateForm" ];
