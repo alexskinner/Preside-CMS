@@ -27,6 +27,11 @@ component {
 		var xmp       = ReReplace( source, regex, "\1" );
 		var extracted = {};
 
+		// RUSTCFML-NOOP: no XMPMetaFactory means no metadata can be extracted.
+		if ( IsSimpleValue( _getMetaFactory() ) ) {
+			return extracted;
+		}
+
 		if ( xmp.len() < source.len() && IsXml( xmp ) ) {
 			var meta     = _getMetaFactory().parseFromString( Trim( xmp ) );
 			var iterator = meta.iterator();
@@ -50,10 +55,18 @@ component {
 
 // PRIVATE HELPERS
 	private void function _setupMetaFactory() {
-		var lib     = [ GetDirectoryFromPath( GetCurrentTemplatePath() ) & "/xmpcore.jar" ];
-		var factory = CreateObject( "java", "com.adobe.xmp.XMPMetaFactory", lib );
+		// RUSTCFML-NOOP: com.adobe.xmp.XMPMetaFactory is a JVM lib (xmpcore.jar) with no
+		// RustCFML shim. Degrade gracefully so boot proceeds; readMeta() returns an empty
+		// struct when the factory is unavailable.
+		// See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #1.
+		try {
+			var lib     = [ GetDirectoryFromPath( GetCurrentTemplatePath() ) & "/xmpcore.jar" ];
+			var factory = CreateObject( "java", "com.adobe.xmp.XMPMetaFactory", lib );
 
-		_setMetaFactory( factory );
+			_setMetaFactory( factory );
+		} catch ( any e ) {
+			_setMetaFactory( "" );
+		}
 	}
 
 // GETTERS AND SETTERS

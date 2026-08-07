@@ -34,7 +34,9 @@ component {
 		_setEmailStatsService( arguments.emailStatsService );
 		_setEmailBotDetectionService( arguments.emailBotDetectionService );
 
-		_jsoup = _new( "org.jsoup.Jsoup" );
+		// RUSTCFML-NOOP: org.jsoup.Jsoup is a JVM lib with no RustCFML shim.
+		// See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #2.
+		try { _jsoup = _new( "org.jsoup.Jsoup" ); } catch ( any e ) { _jsoup = ""; }
 
 		return this;
 	}
@@ -652,6 +654,12 @@ component {
 		  required string messageId
 		, required string messageHtml
 	) {
+		// RUSTCFML-NOOP: no jsoup, so no link rewriting. Return the HTML untouched rather
+		// than raising an error for every single message.
+		if ( !_jsoupIsAvailable() ) {
+			return arguments.messageHtml;
+		}
+
 		var doc             = "";
 		var links           = "";
 		var link            = "";
@@ -1008,6 +1016,12 @@ component {
 
 	private any function _new( required string className ) {
 		return CreateObject( "java", arguments.className, _getLib() );
+	}
+
+	// RUSTCFML-NOOP: false when jsoup could not be loaded at init.
+	// See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #2.
+	private boolean function _jsoupIsAvailable() {
+		return !IsSimpleValue( _jsoup );
 	}
 
 	private array function _getLib() {

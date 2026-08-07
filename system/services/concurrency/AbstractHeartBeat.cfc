@@ -37,6 +37,10 @@ component {
 	}
 
 	public void function start() {
+		// RUSTCFML-NOOP: heartbeats need a live ScheduledThreadPoolExecutor (java.util.concurrent,
+		// no JVM shim). Skip periodic scheduling. See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #3.
+		return;
+
 		if( _isFeatureDisabled() ) {
 			return;
 		}

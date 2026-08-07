@@ -15,6 +15,14 @@ component {
 
 // PUBLIC API
 	public any function clean( required string input, string policy="preside" ) {
+		// RUSTCFML-NOOP: org.owasp.validator.html.AntiSamy is a JVM lib with no RustCFML
+		// shim. When unavailable, pass the input through UNSANITIZED so rendering proceeds.
+		// SECURITY: HTML/XSS sanitization is disabled while no-op'd — do not ship this to
+		// production. See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #5.
+		if ( IsSimpleValue( _getAntiSamy() ) ) {
+			return arguments.input;
+		}
+
 		var dirtyHtml      = ReplaceNoCase( arguments.input, "&quot;", "&~~~quot;", "all" );
 		var antiSamyResult = _getAntiSamy().scan( dirtyHtml, _getPolicy( arguments.policy ) );
 		var cleanHtml      = antiSamyResult.getCleanHtml();
@@ -37,7 +45,13 @@ component {
 	}
 
 	private void function _setupAntiSamy() {
-		_setAntiSamy( CreateObject( "java", "org.owasp.validator.html.AntiSamy", _listJars() ) );
+		// RUSTCFML-NOOP: no JVM shim for AntiSamy — degrade so boot proceeds; clean() passes
+		// input through unsanitized. See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #5.
+		try {
+			_setAntiSamy( CreateObject( "java", "org.owasp.validator.html.AntiSamy", _listJars() ) );
+		} catch ( any e ) {
+			_setAntiSamy( "" );
+		}
 	}
 
 	private any function _getPolicy( required string policy ) {

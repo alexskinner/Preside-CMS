@@ -18,7 +18,9 @@ component {
 		  required any styleCache
 		, required any templateCache
 	) {
-		_jsoup = _new( "org.jsoup.Jsoup" );
+		// RUSTCFML-NOOP: org.jsoup.Jsoup is a JVM lib with no RustCFML shim.
+		// See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #2.
+		try { _jsoup = _new( "org.jsoup.Jsoup" ); } catch ( any e ) { _jsoup = ""; }
 
 		_setStyleCache( arguments.styleCache );
 		_setTemplateCache( arguments.templateCache );
@@ -36,6 +38,11 @@ component {
 	 */
 	public string function inlineStyles( required string html, array styles, string cacheSuffix="" ) {
  		if ( !$helpers.hasTags( arguments.html ) ) {
+			return arguments.html;
+		}
+
+		// RUSTCFML-NOOP: no jsoup, no inlining. Return the HTML untouched.
+		if ( !_jsoupIsAvailable() ) {
 			return arguments.html;
 		}
 
@@ -101,6 +108,11 @@ component {
 	 */
 	public array function readStyles( required any doc ) {
 		if ( IsSimpleValue( arguments.doc ) ) {
+			// RUSTCFML-NOOP: no jsoup means nothing to parse styles out of.
+			if ( !_jsoupIsAvailable() ) {
+				return [];
+			}
+
 			arguments.doc = _jsoup.parse( arguments.doc );
 		}
 
@@ -152,6 +164,12 @@ component {
 
 	private any function _new( required string className ) {
 		return CreateObject( "java", arguments.className, _getLib() );
+	}
+
+	// RUSTCFML-NOOP: false when jsoup could not be loaded at init.
+	// See RustCFML/PRESIDE_BOOT_JAVA_NOOPS.md #2.
+	private boolean function _jsoupIsAvailable() {
+		return !IsSimpleValue( _jsoup );
 	}
 
 	private array function _getLib() {
