@@ -34,6 +34,14 @@ component {
 	public void function applicationStart( event, rc, prc ) {
 		prc._presideReloaded = true;
 
+		// RUSTCFML: warm SystemConfigurationService synchronously WHILE still inside the
+		// reload window (application._preside_reloading = true) so its first load takes the
+		// in-window path (createForm persistToDbCache=false → no saveSetting re-entry).
+		// Without this, an async/out-of-window first read (adhoc task or the request itself)
+		// triggers the reload->createForm->saveSetting->_reloadCheck->reload cycle. Harmless
+		// on Lucee (config warms in-window there too). See RustCFML/PRESIDE_CFCONCURRENT_PLAN.md.
+		getModel( "systemConfigurationService" ).getSetting( category="_rustcfml_warmup", setting="_rustcfml_warmup", default="" );
+
 		_configureVariousServices(); // important for this to happen first
 		_populateDefaultLanguages();
 		_setupCatchAllAdminUserGroup();

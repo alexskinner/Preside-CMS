@@ -438,8 +438,19 @@ component displayName="System configuration service" {
 
 	private void function _reloadCheck() {
 		if ( !_isLoaded() ) {
-			reload();
+			// Set the loaded flag BEFORE reload() to break re-entrancy: reload() ->
+			// _autoDiscoverCategories -> createForm -> _registerForm -> saveSetting ->
+			// _reloadCheck can re-enter, and with the flag set afterwards that recurses
+			// infinitely (RustCFML: async/out-of-reload-window config warm-up hits this;
+			// Lucee avoids it only because in-window warm-up skips the saveSetting path).
+			// Roll back on failure so a genuine reload error isn't masked.
 			_setLoaded( true );
+			try {
+				reload();
+			} catch ( any e ) {
+				_setLoaded( false );
+				rethrow;
+			}
 		}
 	}
 
