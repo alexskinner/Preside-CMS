@@ -83,11 +83,14 @@ component extends="BaseAdapter" {
 				case "datetime":
 					return "timestamp";
 				case "longtext":
+				case "mediumtext":
 					return "text";
 				case "double":
 					return "float";
 				case "bit":
 					return "bool";
+				case "tinyint":
+					return "smallint";
 				default:
 					return arguments.dataType;
 			}
@@ -116,10 +119,15 @@ component extends="BaseAdapter" {
 				   columnDef &= " timestamp";
 				   break;
 				case "longtext":
+				case "mediumtext":
 				   columnDef &= " text";
 				   break;
 				case "double":
 					   columnDef &= " float";
+				case "tinyint":
+				   columnDef &= " smallint";
+				   arguments.maxLength = 0;
+				   break;
 				case "bigint":
 				case "int":
 				case "float":
@@ -308,7 +316,7 @@ component extends="BaseAdapter" {
 			delim = " ";
 			for( col in arguments.selectColumns ){
 				if ( !containsAggregateFunctions( col ) ) {
-					newGroupBy &= delim & REReplace(col, "as\s\w+", "", "one");
+					newGroupBy &= delim & REReplaceNoCase( col, "\s+as\s+""?\w+""?", "", "one" );
 					delim = ", ";
 				}
 			}
@@ -513,10 +521,15 @@ component extends="BaseAdapter" {
 						columnType &= " timestamp";
 						break;
 					case "longtext":
+					case "mediumtext":
 						columnType &= " text";
 						break;
 					case "double":
 						columnType &= " float";
+					case "tinyint":
+						columnType &= " smallint USING (#arguments.columnName#::::smallint)";
+						arguments.maxLength = 0;
+						break;
 					case "bigint":
 					case "int":
 					case "float":
