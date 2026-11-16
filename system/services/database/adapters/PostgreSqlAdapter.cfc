@@ -30,13 +30,16 @@ component extends="BaseAdapter" {
 		, required array  updateColumns
 		, required array  conflictColumns
 	) {
-		var insertSql = super.getInsertSql(
+		var insertSql   = super.getInsertSql(
 			  tableName     = arguments.tableName
 			, insertColumns = arguments.insertColumns
 		);
-		var sql       = insertSql[ 1 ];
-		var delim     = "";
-		var conflict  = "";
+		var insertPart  = REReplaceNoCase( insertSql[ 1 ], "\s+RETURNING\s+\*$", "", "one" );
+		var delim       = "";
+		var col         = "";
+		var sql         = "";
+		var whereClause = "";
+		var setClauses  = "";
 
 		if ( !ArrayLen( arguments.conflictColumns ) ) {
 			throw(
@@ -45,23 +48,23 @@ component extends="BaseAdapter" {
 			);
 		}
 
-		for( var col in arguments.conflictColumns ) {
-			conflict &= delim & escapeEntity( lcase( col ) );
+		delim = "";
+		for( col in arguments.conflictColumns ) {
+			whereClause &= delim & escapeEntity( lcase( col ) ) & " IS NOT DISTINCT FROM :" & lcase( col );
+			delim = " AND ";
+		}
+
+		if ( !ArrayLen( arguments.updateColumns ) ) {
+			arguments.updateColumns = [ arguments.conflictColumns[ 1 ] ];
+		}
+
+		delim = "";
+		for( col in arguments.updateColumns ) {
+			setClauses &= delim & escapeEntity( lcase( col ) ) & " = :set__" & col;
 			delim = ", ";
 		}
 
-		sql &= " on conflict ( #conflict# ) do update set";
-		delim = "";
-
-		if ( !ArrayLen( arguments.updateColumns ) ) {
-			sql &= " " & escapeEntity( lcase( arguments.conflictColumns[ 1 ] ) ) & " = excluded." & escapeEntity( lcase( arguments.conflictColumns[ 1 ] ) );
-			return [ sql ];
-		}
-
-		for( var updateCol in arguments.updateColumns ) {
-			sql &= delim & " " & escapeEntity( lcase( updateCol ) ) & " = :set__" & updateCol;
-			delim = ",";
-		}
+		sql = "WITH upd AS ( UPDATE " & escapeEntity( arguments.tableName ) & " SET " & setClauses & " WHERE " & whereClause & " RETURNING 1 ) " & insertPart & " WHERE NOT EXISTS ( SELECT 1 FROM upd ) RETURNING *";
 
 		return [ sql ];
 	}
@@ -205,37 +208,6 @@ component extends="BaseAdapter" {
 
 	public string function getDropIndexSql( required string indexName, required string tableName ) {
 		return "drop index " & escapeEntity( arguments.indexName );
-	}
-
-	public string function getIndexSql(
-		  required string  indexName
-		, required string  tableName
-		, required string  fieldList
-		,          boolean unique=false
-	) {
-		var fields = ListToArray( arguments.fieldList );
-		var field  = "";
-		var sql    = "create ";
-		var delim  = "";
-
-		if ( arguments.unique ) {
-			sql &= "unique ";
-		}
-
-		sql &= "index #escapeEntity( ensureValidIndexName( arguments.indexName ) )# on #escapeEntity( arguments.tableName )# (";
-
-		for( field in fields ){
-			sql &= delim & " " & escapeEntity( field );
-			delim = ",";
-		}
-
-		sql &= " )";
-
-		if ( arguments.unique ) {
-			sql &= " nulls not distinct";
-		}
-
-		return sql;
 	}
 
 	public string function getUpdateSql(
@@ -431,7 +403,7 @@ component extends="BaseAdapter" {
 				newSql &=" and " & col & " = " & " Temp." & REReplace( col, ".*?\.", "", "one" );
 			}
 		} else {
-			newSql &= " where ";
+			newSql = sqlNonGroupBy & newSql & " where ";
 			for( col in arrColumnInGroupBy ) {
 				newSql &= delim & col & " = " & " Temp." & REReplace( col, ".*?\.", "", "one" );
 				delim = " and ";

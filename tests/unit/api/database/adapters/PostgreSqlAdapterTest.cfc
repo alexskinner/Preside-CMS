@@ -192,6 +192,40 @@
 		</cfscript>
 	</cffunction>
 
+	<cffunction name="test11_getSelectSql_shouldHandleGroupByWithoutWhereClause" returntype="void">
+		<cfscript>
+			var adapter  = _getAdapter();
+			var result   = adapter.getSelectSql(
+				  tableName     = "admin_notification"
+				, tableAlias    = "admin_notification"
+				, selectColumns = [ "admin_notification.topic" ]
+				, groupBy       = "group by admin_notification.topic"
+			);
+
+			super.assert( FindNoCase( "select", result ), "Should include SELECT keyword" );
+			super.assert( !ReFindNoCase( "^\s*,", result ), "Should not start with a comma" );
+			super.assert( FindNoCase( "admin_notification.topic", result ), "Should include grouped column" );
+			super.assert( FindNoCase( "as Temp", result ), "Should include Temp subquery alias" );
+		</cfscript>
+	</cffunction>
+
+	<cffunction name="test12_getUpsertSql_shouldUseNullSafeComparison" returntype="void">
+		<cfscript>
+			var adapter  = _getAdapter();
+			var result   = adapter.getUpsertSql(
+				  tableName       = "system_config"
+				, insertColumns   = [ "category", "setting", "value", "tenant_id", "site" ]
+				, updateColumns   = [ "value" ]
+				, conflictColumns = [ "category", "setting", "tenant_id", "site" ]
+			);
+
+			super.assert( FindNoCase( "WITH upd AS", result[1] ), "Should use CTE approach" );
+			super.assert( FindNoCase( "IS NOT DISTINCT FROM", result[1] ), "Should use IS NOT DISTINCT FROM for NULL-safe comparison" );
+			super.assert( FindNoCase( "WHERE NOT EXISTS", result[1] ), "Should use WHERE NOT EXISTS" );
+			super.assert( !FindNoCase( "ON CONFLICT", result[1] ), "Should not use ON CONFLICT" );
+		</cfscript>
+	</cffunction>
+
 <!--- test helpers --->
 	<cffunction name="_getAdapter" access="private" returntype="any" output="false">
 		<cfscript>
