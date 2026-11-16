@@ -139,7 +139,7 @@
 		</cfscript>
 	</cffunction>
 
-	<cffunction name="test08_getUpsertSql_shouldReturnOnConflictSyntax" returntype="void">
+	<cffunction name="test08_getUpsertSql_shouldUseNullSafeCTEApproach" returntype="void">
 		<cfscript>
 			var adapter  = _getAdapter();
 			var result   = adapter.getUpsertSql(
@@ -149,8 +149,11 @@
 				, conflictColumns = [ "category", "setting", "tenant_id" ]
 			);
 
-			super.assert( FindNoCase( "on conflict", result[1] ), "Should include ON CONFLICT clause" );
-			super.assert( FindNoCase( "do update set", result[1] ), "Should include DO UPDATE SET clause" );
+			super.assert( FindNoCase( "WITH upd AS", result[1] ), "Should use CTE approach with upd" );
+			super.assert( FindNoCase( "ins AS", result[1] ), "Should use CTE approach with ins" );
+			super.assert( FindNoCase( "IS NOT DISTINCT FROM", result[1] ), "Should use IS NOT DISTINCT FROM for NULL-safe comparison" );
+			super.assert( FindNoCase( "UNION ALL", result[1] ), "Should use UNION ALL to combine UPDATE and INSERT results" );
+			super.assert( !FindNoCase( "ON CONFLICT", result[1] ), "Should not use ON CONFLICT approach" );
 		</cfscript>
 	</cffunction>
 
@@ -209,7 +212,7 @@
 		</cfscript>
 	</cffunction>
 
-	<cffunction name="test12_getUpsertSql_shouldUseNullSafeComparison" returntype="void">
+	<cffunction name="test12_getUpsertSql_shouldUseSelectFormNotValues" returntype="void">
 		<cfscript>
 			var adapter  = _getAdapter();
 			var result   = adapter.getUpsertSql(
@@ -219,9 +222,15 @@
 				, conflictColumns = [ "category", "setting", "tenant_id", "site" ]
 			);
 
-			super.assert( FindNoCase( "WITH upd AS", result[1] ), "Should use CTE approach" );
+			super.assert( FindNoCase( "WITH upd AS", result[1] ), "Should use CTE approach with upd" );
+			super.assert( FindNoCase( "ins AS", result[1] ), "Should use CTE approach with ins" );
 			super.assert( FindNoCase( "IS NOT DISTINCT FROM", result[1] ), "Should use IS NOT DISTINCT FROM for NULL-safe comparison" );
-			super.assert( FindNoCase( "WHERE NOT EXISTS", result[1] ), "Should use WHERE NOT EXISTS" );
+			super.assert( FindNoCase( "INSERT INTO", result[1] ), "Should use INSERT INTO" );
+			super.assert( FindNoCase( "SELECT :", result[1] ), "Should use SELECT form for insert values" );
+			super.assert( !FindNoCase( "values (", result[1] ), "Should not use VALUES form" );
+			super.assert( FindNoCase( "UNION ALL", result[1] ), "Should use UNION ALL to return rows from both UPDATE and INSERT paths" );
+			super.assert( FindNoCase( "SELECT * FROM upd", result[1] ), "Should select from upd CTE to return updated rows" );
+			super.assert( FindNoCase( "SELECT * FROM ins", result[1] ), "Should select from ins CTE to return inserted rows" );
 			super.assert( !FindNoCase( "ON CONFLICT", result[1] ), "Should not use ON CONFLICT" );
 		</cfscript>
 	</cffunction>

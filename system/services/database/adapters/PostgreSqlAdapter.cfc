@@ -30,16 +30,13 @@ component extends="BaseAdapter" {
 		, required array  updateColumns
 		, required array  conflictColumns
 	) {
-		var insertSql   = super.getInsertSql(
-			  tableName     = arguments.tableName
-			, insertColumns = arguments.insertColumns
-		);
-		var insertPart  = REReplaceNoCase( insertSql[ 1 ], "\s+RETURNING\s+\*$", "", "one" );
-		var delim       = "";
-		var col         = "";
-		var sql         = "";
-		var whereClause = "";
-		var setClauses  = "";
+		var delim        = "";
+		var col          = "";
+		var sql          = "";
+		var whereClause  = "";
+		var setClauses   = "";
+		var selectClause = "";
+		var columnList   = "";
 
 		if ( !ArrayLen( arguments.conflictColumns ) ) {
 			throw(
@@ -64,7 +61,14 @@ component extends="BaseAdapter" {
 			delim = ", ";
 		}
 
-		sql = "WITH upd AS ( UPDATE " & escapeEntity( arguments.tableName ) & " SET " & setClauses & " WHERE " & whereClause & " RETURNING 1 ) " & insertPart & " WHERE NOT EXISTS ( SELECT 1 FROM upd ) RETURNING *";
+		delim = "";
+		for( col in arguments.insertColumns ) {
+			columnList   &= delim & escapeEntity( lcase( col ) );
+			selectClause &= delim & ":" & lcase( col );
+			delim = ", ";
+		}
+
+		sql = "WITH upd AS ( UPDATE " & escapeEntity( arguments.tableName ) & " SET " & setClauses & " WHERE " & whereClause & " RETURNING * ), ins AS ( INSERT INTO " & escapeEntity( arguments.tableName ) & " ( " & columnList & " ) SELECT " & selectClause & " WHERE NOT EXISTS ( SELECT 1 FROM upd ) RETURNING * ) SELECT * FROM upd UNION ALL SELECT * FROM ins";
 
 		return [ sql ];
 	}
@@ -121,12 +125,14 @@ component extends="BaseAdapter" {
 				case "datetime":
 				   columnDef &= " timestamp";
 				   break;
-				case "longtext":
-				case "mediumtext":
+			case "longtext":
+			case "mediumtext":
 				   columnDef &= " text";
 				   break;
 				case "double":
 					   columnDef &= " float";
+					   arguments.maxLength = 0;
+					   break;
 				case "tinyint":
 				   columnDef &= " smallint";
 				   arguments.maxLength = 0;
