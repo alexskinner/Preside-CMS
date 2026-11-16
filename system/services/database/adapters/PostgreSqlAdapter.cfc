@@ -207,6 +207,37 @@ component extends="BaseAdapter" {
 		return "drop index " & escapeEntity( arguments.indexName );
 	}
 
+	public string function getIndexSql(
+		  required string  indexName
+		, required string  tableName
+		, required string  fieldList
+		,          boolean unique=false
+	) {
+		var fields = ListToArray( arguments.fieldList );
+		var field  = "";
+		var sql    = "create ";
+		var delim  = "";
+
+		if ( arguments.unique ) {
+			sql &= "unique ";
+		}
+
+		sql &= "index #escapeEntity( ensureValidIndexName( arguments.indexName ) )# on #escapeEntity( arguments.tableName )# (";
+
+		for( field in fields ){
+			sql &= delim & " " & escapeEntity( field );
+			delim = ",";
+		}
+
+		sql &= " )";
+
+		if ( arguments.unique ) {
+			sql &= " nulls not distinct";
+		}
+
+		return sql;
+	}
+
 	public string function getUpdateSql(
 		  required string tableName
 		, required array  updateColumns
