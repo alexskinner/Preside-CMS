@@ -194,7 +194,7 @@
 			var expected = """id"" from ""event"" limit 10 offset 10";
 			var result   = adapter.getSelectSql(
 				  tableName     = "event"
-				, selectColumns = [ "`id`" ]
+				, selectColumns = [ """id""" ]
 				, maxRows       = 10
 				, startRow      = 11
 			);
