@@ -95,27 +95,35 @@
 
 	<cffunction name="test04_getSelectSql_shouldStripQuotedAliasesInAutoGroupBy" returntype="void">
 		<cfscript>
-			var adapter  = _getAdapter();
-			var result   = adapter.getSelectSql(
+			var adapter    = _getAdapter();
+			var result     = adapter.getSelectSql(
 				  tableName     = "page"
 				, selectColumns = [ "page._hierarchy_slug as ""full_slug""", "Count(*) as cnt" ]
+				, groupBy       = "page._hierarchy_slug as ""full_slug"""
 			);
+			var groupByPos = FindNoCase( "group by", result );
+			var groupBySql = groupByPos ? Mid( result, groupByPos, Len( result ) ) : "";
 
-			super.assert( FindNoCase( "group by", result ), "Should include GROUP BY clause when aggregate functions are present" );
-			super.assert( !FindNoCase( "as ""full_slug""", result ), "Should strip quoted alias from GROUP BY clause" );
+			super.assert( groupByPos, "Should include GROUP BY clause when aggregate functions are present" );
+			super.assert( FindNoCase( "page._hierarchy_slug", groupBySql ), "Should include non-aggregate column in GROUP BY" );
+			super.assert( !FindNoCase( "as ""full_slug""", groupBySql ), "Should strip quoted alias from GROUP BY clause" );
 		</cfscript>
 	</cffunction>
 
 	<cffunction name="test05_getSelectSql_shouldHandleUnquotedAliasesInAutoGroupBy" returntype="void">
 		<cfscript>
-			var adapter  = _getAdapter();
-			var result   = adapter.getSelectSql(
+			var adapter    = _getAdapter();
+			var result     = adapter.getSelectSql(
 				  tableName     = "test"
 				, selectColumns = [ "test.col as myalias", "Sum(test.value) as total" ]
+				, groupBy       = "test.col as myalias"
 			);
+			var groupByPos = FindNoCase( "group by", result );
+			var groupBySql = groupByPos ? Mid( result, groupByPos, Len( result ) ) : "";
 
-			super.assert( FindNoCase( "group by", result ), "Should include GROUP BY clause when aggregate functions are present" );
-			super.assert( !FindNoCase( "as myalias", result ), "Should strip unquoted alias from GROUP BY clause" );
+			super.assert( groupByPos, "Should include GROUP BY clause when aggregate functions are present" );
+			super.assert( FindNoCase( "test.col", groupBySql ), "Should include non-aggregate column in GROUP BY" );
+			super.assert( !FindNoCase( "as myalias", groupBySql ), "Should strip unquoted alias from GROUP BY clause" );
 		</cfscript>
 	</cffunction>
 

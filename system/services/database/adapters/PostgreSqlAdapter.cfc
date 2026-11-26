@@ -304,6 +304,7 @@ component extends="BaseAdapter" {
 		, required array   selectColumns
 		,          any     filter        = {}
 		,          string  orderBy       = ""
+		,          string  having        = ""
 		,          string  groupBy       = ""
 		,          string  tableAlias    = ""
 		,          array   joins         = []
